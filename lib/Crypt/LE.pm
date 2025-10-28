@@ -671,7 +671,10 @@ sub _set_key {
     my $pem = $key->get_private_key_string;
     my ($n, $e) = $key->get_key_parameters;
     return $self->_status(INVALID_DATA, "Key modulus is divisible by a small prime and will be rejected.") if $self->_is_divisible($n);
-    $key->use_pkcs1_padding;
+    # use_pkcs1_padding() is not needed for signing operations.
+    # OpenSSL's EVP_PKEY_sign() uses PKCS#1 v1.5 signature padding (Type 1) automatically.
+    # The padding field controlled by use_pkcs1_padding() only affects encrypt/decrypt operations (Type 2).
+    # Type 2 padding is vulnerable to Marvin attacks, but Type 1 (signatures) is secure.
     $key->use_sha256_hash;
     $self->{key_params} = { n => $n, e => $e };
     $self->{key} = $key;
